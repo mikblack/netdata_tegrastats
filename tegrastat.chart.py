@@ -11,22 +11,25 @@ from bases.FrameworkServices.SimpleService import SimpleService
 
 disabled_by_default = True
 
-TEGRASTATS = '/home/nvidia/tegrastats'
+TEGRASTATS = '/usr/bin/tegrastats'
 
 
 GPU_LOAD_PERCENT = "gpu_load"
 FAN_SPEED_RPM = "fan_speed"
 GPU_GHZ_FREQ = "gpu_freq"
+GPU_DEGC_TEMP = "gpu_temp"
 
 GPU_LOAD = '/sys/devices/gpu.0/load'
 FAN_SPEED = '/sys/kernel/debug/tegra_fan/target_pwm'
-GPU_FREQ = '/sys/devices/gpu.0/devfreq/17000000.gv11b/cur_freq'
+GPU_FREQ = '/sys/devices/gpu.0/devfreq/57000000.gpu/cur_freq'
+GPU_TEMP = '/sys/devices/virtual/thermal/thermal_zone2/temp'
 
 
 ORDER = [
     GPU_LOAD_PERCENT,
   #  FAN_SPEED_RPM,
-    GPU_GHZ_FREQ
+    GPU_GHZ_FREQ,
+    GPU_DEGC_TEMP
 ]
 
 CHARTS = {
@@ -47,6 +50,12 @@ CHARTS = {
         'lines': [
             ['gpu_freq','Mhz','absolute']
         ]
+    },
+    GPU_DEGC_TEMP: {
+	'options': [None, 'GPU temperature', 'C', 'Temperature', 'gpu_temp', 'line'],
+	'lines': [
+	    ['gpu_temp','C','absolute']
+	]
     }
 }
 
@@ -67,6 +76,7 @@ class Service(SimpleService):
         data['gpu_load'] = self.get_gpu_load()
  #       data['gpu_fan_speed'] = self.get_gpu_fan()
         data['gpu_freq'] = self.get_gpu_freq()
+        data['gpu_temp'] = self.get_gpu_temp()
         return data or None
 
     def get_gpu_load(self):
@@ -85,4 +95,10 @@ class Service(SimpleService):
         stdout, _ = freq_cmd.communicate()
         freq = float(stdout)
         return (freq / 1000000 )
+
+    def get_gpu_temp(self):
+        proc = subprocess.Popen(['cat', GPU_TEMP], stdout=subprocess.PIPE)
+        stdout, _ = proc.communicate()
+        temp = int(stdout) /  1000
+        return temp
 
